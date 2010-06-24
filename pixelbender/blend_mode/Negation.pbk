@@ -1,0 +1,32 @@
+<languageVersion : 1.0;>
+
+kernel NegationBlendMode
+<   namespace : "org.sroucheray";
+    vendor : "Stéphane Roucheray";
+    version : 1;
+    description : "Negation BlendMode"; >
+{
+    parameter float percent
+    <
+        minValue:       0.0;
+        maxValue:       1.0;
+        defaultValue:   1.0;
+    >;
+    
+    input image4 frontImage;
+    input image4 backImage;
+    output pixel4 dst;
+   
+   void evaluatePixel()
+   {
+        float2 coord = outCoord();
+        pixel4 cs = sampleNearest(frontImage, coord);
+        pixel4 cb = sampleNearest(backImage, coord);
+        
+        pixel4 fullBlend = 1.0 - abs(1.0 - cs - cb);
+        
+        fullBlend.a = cs.a;
+        
+        dst = mix(cs, fullBlend, percent);
+   }
+}

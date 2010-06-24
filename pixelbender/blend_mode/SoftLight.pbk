@@ -1,0 +1,54 @@
+<languageVersion : 1.0;>
+
+kernel SoftLightBlendMode
+<   namespace : "org.sroucheray";
+    vendor : "Stéphane Roucheray";
+    version : 1;
+    description : "Photoshop Soft Light BlendMode"; >
+{
+    parameter float percent
+    <
+        minValue:       0.0;
+        maxValue:       1.0;
+        defaultValue:   1.0;
+    >;
+    
+    input image4 frontImage;
+    input image4 backImage;
+    output pixel4 dst;
+   
+   void evaluatePixel()
+   {
+        float2 coord = outCoord();
+        pixel4 cs = sampleNearest(frontImage, coord);
+        pixel4 cb = sampleNearest(backImage, coord);
+        pixel4 fullBlend = cs;
+        
+        //Red
+        if (cs.r <= 0.5){
+            fullBlend.r = cb.r - (1.0 - 2.0 * cs.r) * cb.r * (1.0 - cb.r);
+        }else if(cb.r <= 0.25){
+            fullBlend.r = cb.r + (2.0 * cs.r - 1.0) * (/**/((16.0 * cb.r - 12.0) * cb.r + 4.0) * cb.r/**/ - cb.r);
+        }else{
+            fullBlend.r = cb.r + (2.0 * cs.r - 1.0) * (/**/sqrt(cb.r)/**/ - cb.r);
+        }
+        //Green
+        if (cs.g <= 0.5){
+            fullBlend.g = cb.g - (1.0 - 2.0 * cs.g) * cb.g * (1.0 - cb.g);
+        }else if(cb.g <= 0.25){
+            fullBlend.g = cb.g + (2.0 * cs.g - 1.0) * (/**/((16.0 * cb.g - 12.0) * cb.g + 4.0) * cb.g/**/ - cb.g);
+        }else{
+            fullBlend.g = cb.g + (2.0 * cs.g - 1.0) * (/**/sqrt(cb.g)/**/ - cb.g);
+        }
+        //Blue
+        if (cs.b <= 0.5){
+            fullBlend.b = cb.b - (1.0 - 2.0 * cs.b) * cb.b * (1.0 - cb.b);
+        }else if(cb.b <= 0.25){
+            fullBlend.b = cb.b + (2.0 * cs.b - 1.0) * (/**/((16.0 * cb.b - 12.0) * cb.b + 4.0) * cb.b/**/ - cb.b);
+        }else{
+            fullBlend.b = cb.b + (2.0 * cs.b - 1.0) * (/**/sqrt(cb.b)/**/ - cb.b);
+        }
+        
+        dst = mix(cs, fullBlend, percent);
+   }
+}

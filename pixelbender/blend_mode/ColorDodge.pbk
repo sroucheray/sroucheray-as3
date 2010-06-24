@@ -1,0 +1,39 @@
+<languageVersion : 1.0;>
+
+kernel ColorDodgeBlendMode
+<   namespace : "org.sroucheray";
+    vendor : "Stéphane Roucheray";
+    version : 1;
+    description : "Photoshop Color Dodge BlendMode"; >
+{
+    parameter float percent
+    <
+        minValue:       0.0;
+        maxValue:       1.0;
+        defaultValue:   1.0;
+    >;
+    
+    input image4 frontImage;
+    input image4 backImage;
+    output pixel4 dst;
+   
+   void evaluatePixel()
+   {
+        float2 coord = outCoord();
+        pixel4 frontPixel = sampleNearest(frontImage, coord);
+        pixel4 backPixel = sampleNearest(backImage, coord);
+        pixel4 fullBlend = pixel4(1.0, 1.0, 1.0, frontPixel.a);
+        
+        if (frontPixel.r < 1.0){
+            fullBlend.r = min(1.0, backPixel.r / (1.0 - frontPixel.r));
+        }
+        if (frontPixel.g < 1.0){
+            fullBlend.g = min(1.0, backPixel.g / (1.0 - frontPixel.g));
+        }
+        if (frontPixel.b < 1.0){
+            fullBlend.b = min(1.0, backPixel.b / (1.0 - frontPixel.b));
+        }
+        
+        dst = mix(frontPixel, fullBlend, percent);
+   }
+}

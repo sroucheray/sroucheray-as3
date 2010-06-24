@@ -1,0 +1,114 @@
+<languageVersion : 1.0;>
+
+
+kernel SaturationBlendMode
+<   namespace : "org.sroucheray";
+    vendor : "Stéphane Roucheray";
+    version : 1;
+    description : "Photoshop Saturation BlendMode"; >
+{
+    parameter float percent
+    <
+        minValue:       0.0;
+        maxValue:       1.0;
+        defaultValue:   1.0;
+    >;
+    
+    input image4 frontImage;
+    input image4 backImage;
+    output pixel4 dst;
+   
+    void evaluatePixel()
+    {
+        pixel4 cs = sampleNearest(frontImage, outCoord());
+        pixel4 cb = sampleNearest(backImage, outCoord());
+        pixel4 fullBlend;
+        
+        //Lum(Cb)
+        float lumCb = 0.3 * cb.r + 0.59 * cb.g + 0.11 * cb.b;
+        //Sat(Cs)
+        float satCs = max(max(cs.r, cs.g), cs.b) - min(min(cs.r, cs.g), cs.b);
+        
+        
+        //SetSat(Cb, satCs)
+        float cMax = max(max(cb.r, cb.g), cb.b);
+        float cMin = min(min(cb.r, cb.g), cb.b);
+        if(cb.r <= cb.g){
+            // r <= g
+            if(cb.g <= cb.b){
+                // r <= g <= b
+                /**/
+                    if(cb.b > cb.r){
+                        fullBlend.g = (((cb.g - cb.r) * satCs) / (cb.b - cb.r));
+                        fullBlend.b = satCs;
+                    }else{
+                        fullBlend.g = 0.0;
+                        fullBlend.b = 0.0;
+                    }
+                    fullBlend.r = 0.0;
+                /**/
+            }else if(cb.b < cb.r) {
+                // b < r < g
+                /**/
+                    fullBlend.r = (((cb.r - cb.b) * satCs) / (cb.g - cb.b));
+                    fullBlend.g = satCs;
+                    fullBlend.b = 0.0;
+                /**/
+            }else{
+                // r <= b < g
+                /**/
+                    fullBlend.b = (((cb.b - cb.r) * satCs) / (cb.g - cb.r));
+                    fullBlend.g = satCs;
+                    fullBlend.r = 0.0;
+                /**/
+            }
+        }else{
+            // g < r
+            if(cb.r <= cb.b){
+                // g < r <= b
+                /**/
+                    fullBlend.r = (((cb.r - cb.g) * satCs) / (cb.b - cb.g));
+                    fullBlend.b = satCs;
+                    fullBlend.g = 0.0;
+                /**/
+            }else if(cb.b < cb.g){
+                // b < g < r
+                /**/
+                    fullBlend.g = (((cb.g - cb.b) * satCs) / (cb.r - cb.b));
+                    fullBlend.r = satCs;
+                    fullBlend.b = 0.0;
+                /**/
+            }else{
+                // g <= b < r
+                /**/
+                    fullBlend.b = (((cb.b - cb.g) * satCs) / (cb.r - cb.g));
+                    fullBlend.r = satCs;
+                    fullBlend.g = 0.0;
+                /**/
+            }
+        }
+        
+        //Lum(fullBlend)
+        float lumFullBlend = 0.3 * fullBlend.r + 0.59 * fullBlend.g + 0.11 * fullBlend.b;
+        
+        //SetLum(fullBlend, lumCb)
+        float d = lumCb - lumFullBlend;
+        fullBlend = fullBlend + d;
+        
+        
+        //ClipColor()
+        float n = min(min(fullBlend.r, fullBlend.g), fullBlend.b);
+        float x = max(max(fullBlend.r, fullBlend.g), fullBlend.b);
+        if(n < 0.0){
+            fullBlend = lumCb + (((fullBlend - lumCb) * lumCb) / (lumCb - n));
+        }
+        
+        if(x > 1.0){
+            fullBlend = lumCb + (((fullBlend - lumCb) * (1.0 - lumCb) / (x - lumCb)));
+        }
+        
+        fullBlend.a = cs.a;
+        
+        dst = mix(cs, fullBlend, percent);
+    }
+}

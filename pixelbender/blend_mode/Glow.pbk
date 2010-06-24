@@ -1,0 +1,50 @@
+<languageVersion : 1.0;>
+
+kernel GlowBlendMode
+<   namespace : "org.sroucheray";
+    vendor : "Stéphane Roucheray";
+    version : 1;
+    description : "Glow BlendMode"; >
+{
+    parameter float percent
+    <
+        minValue:       0.0;
+        maxValue:       1.0;
+        defaultValue:   1.0;
+    >;
+    
+    input image4 frontImage;
+    input image4 backImage;
+    output pixel4 dst;
+   
+   void evaluatePixel()
+   {
+        float2 coord = outCoord();
+        pixel4 cs = sampleNearest(frontImage, coord);
+        pixel4 cb = sampleNearest(backImage, coord);
+        
+        pixel4 fullBlend;
+        
+        if (cs.r == 1.0){
+            fullBlend.r = cs.r;
+        }else{
+            fullBlend.r = min(1.0, (cb.r * cb.r / (1.0 - cs.r)));
+        }
+        
+        if (cs.g == 1.0){
+            fullBlend.g = cs.g;
+        }else{
+            fullBlend.g = min(1.0, (cb.g * cb.g / (1.0 - cs.g)));
+        }
+        
+        if (cs.b == 1.0){
+            fullBlend.b = cs.b;
+        }else{
+            fullBlend.b = min(1.0, (cb.b * cb.b / (1.0 - cs.b)));
+        }
+
+        fullBlend.a = cs.a;
+        
+        dst = mix(cs, fullBlend, percent);
+   }
+}

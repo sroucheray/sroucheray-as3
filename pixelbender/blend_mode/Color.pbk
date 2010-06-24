@@ -1,0 +1,51 @@
+<languageVersion : 1.0;>
+
+
+kernel ColorBlendMode
+<   namespace : "org.sroucheray";
+    vendor : "Stéphane Roucheray";
+    version : 1;
+    description : "Photoshop Color BlendMode"; >
+{
+    parameter float percent
+    <
+        minValue:       0.0;
+        maxValue:       1.0;
+        defaultValue:   1.0;
+    >;
+    
+    input image4 frontImage;
+    input image4 backImage;
+    output pixel4 dst;
+   
+    void evaluatePixel()
+    {
+        pixel4 cs = sampleNearest(frontImage, outCoord());
+        pixel4 cb = sampleNearest(backImage, outCoord());
+        pixel4 fullBlend;
+        
+        //Lum(Cb)
+        float lumCb = 0.3 * cb.r + 0.59 * cb.g + 0.11 * cb.b;
+        //Lum(Cs)
+        float lumCs = 0.3 * cs.r + 0.59 * cs.g + 0.11 * cs.b;
+        
+        //SetLum(Cs, lumCb)
+        float d = lumCb - lumCs;
+        fullBlend = cs + d;
+        
+        //ClipColor()
+        float n = min(min(fullBlend.r, fullBlend.g), fullBlend.b);
+        float x = max(max(fullBlend.r, fullBlend.g), fullBlend.b);
+        if(n < 0.0){
+            fullBlend = lumCs + (((fullBlend - lumCs) * lumCs) / (lumCs - n));
+        }
+        
+        if(x > 1.0){
+            fullBlend = lumCs + (((fullBlend - lumCs) * (1.0 - lumCs) / (x - lumCs)));
+        }
+        
+        fullBlend.a = cs.a;
+        
+        dst = mix(cs, fullBlend, percent);
+    }
+}

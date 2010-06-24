@@ -1,0 +1,39 @@
+<languageVersion : 1.0;>
+
+kernel ColorBurnBlendMode
+<   namespace : "org.sroucheray";
+    vendor : "Stéphane Roucheray";
+    version : 1;
+    description : "Photoshop Color Burn BlendMode"; >
+{
+    parameter float percent
+    <
+        minValue:       0.0;
+        maxValue:       1.0;
+        defaultValue:   1.0;
+    >;
+   
+    input image4 frontImage;
+    input image4 backImage;
+    output pixel4 dst;
+   
+    void evaluatePixel()
+    {
+        float2 coord = outCoord();
+        pixel4 frontPixel = sampleNearest(frontImage, coord);
+        pixel4 backPixel = sampleNearest(backImage, coord);
+        pixel4 fullBlend = pixel4(0.0, 0.0, 0.0, frontPixel.a);
+        
+        if (frontPixel.r > 0.0){
+            fullBlend.r = 1.0 - min(1.0, (1.0 - backPixel.r) / frontPixel.r);
+        }
+        if (frontPixel.g > 0.0){
+            fullBlend.g = 1.0 - min(1.0, (1.0 - backPixel.g) / frontPixel.g);
+        }
+        if (frontPixel.b > 0.0){
+            fullBlend.b = 1.0 - min(1.0, (1.0 - backPixel.b) / frontPixel.b);
+        }
+        
+        dst = mix(frontPixel, fullBlend, percent);
+   }
+}

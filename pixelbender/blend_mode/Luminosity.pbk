@@ -1,0 +1,51 @@
+<languageVersion : 1.0;>
+
+
+kernel LuminosityBlendMode
+<   namespace : "org.sroucheray";
+    vendor : "Stéphane Roucheray";
+    version : 1;
+    description : "Photoshop Luminosity BlendMode"; >
+{
+    parameter float percent
+    <
+        minValue:       0.0;
+        maxValue:       1.0;
+        defaultValue:   1.0;
+    >;
+    
+    input image4 frontImage;
+    input image4 backImage;
+    output pixel4 dst;
+   
+    void evaluatePixel()
+    {
+        pixel4 cs = sampleNearest(frontImage, outCoord());
+        pixel4 cb = sampleNearest(backImage, outCoord());
+        pixel4 fullBlend;
+        
+        //Lum(Cb)
+        float lumCb = 0.3 * cb.r + 0.59 * cb.g + 0.11 * cb.b;
+        //Lum(Cs)
+        float lumCs = 0.3 * cs.r + 0.59 * cs.g + 0.11 * cs.b;
+        
+        //SetLum(Cb, lumCs)
+        float d = lumCs - lumCb;
+        fullBlend = cb + d;
+        
+        //ClipColor()
+        float n = min(min(fullBlend.r, fullBlend.g), fullBlend.b);
+        float x = max(max(fullBlend.r, fullBlend.g), fullBlend.b);
+        if(n < 0.0){
+            fullBlend = lumCb + (((fullBlend - lumCb) * lumCb) / (lumCb - n));
+        }
+        
+        if(x > 1.0){
+            fullBlend = lumCb + (((fullBlend - lumCb) * (1.0 - lumCb) / (x - lumCb)));
+        }
+        
+        fullBlend.a = cs.a;
+        
+        dst = mix(cs, fullBlend, percent);
+    }
+}
