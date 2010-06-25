@@ -34,14 +34,17 @@ kernel ColorBlendMode
         fullBlend = cs + d;
         
         //ClipColor()
+        
+        //Lum(fullBlend)
+        float lumfullBlend = 0.3 * fullBlend.r + 0.59 * fullBlend.g + 0.11 * fullBlend.b;
         float n = min(min(fullBlend.r, fullBlend.g), fullBlend.b);
         float x = max(max(fullBlend.r, fullBlend.g), fullBlend.b);
         if(n < 0.0){
-            fullBlend = lumCs + (((fullBlend - lumCs) * lumCs) / (lumCs - n));
+            fullBlend = lumfullBlend + (((fullBlend - lumfullBlend) * lumfullBlend) / (lumfullBlend - n));
         }
         
         if(x > 1.0){
-            fullBlend = lumCs + (((fullBlend - lumCs) * (1.0 - lumCs) / (x - lumCs)));
+            fullBlend = lumfullBlend + (((fullBlend - lumfullBlend) * (1.0 - lumfullBlend) / (x - lumfullBlend)));
         }
         
         fullBlend.a = cs.a;
